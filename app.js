@@ -21,15 +21,19 @@ const cardData = imap_simple.connect(imapConfig).then( (connection) => {
 
         const fetchOpts = {
             bodies: ['HEADER', 'TEXT'],
-            markSeen: false,
+            markSeen: true,
         }
 
         return connection.search(searchCriteria, fetchOpts).then( (results) => {
-            return [results[0].parts[1].body.subject[0], results[0].parts[0].body];
+            const emails = [];
+            results.forEach( (email) => {
+                emails.push([email.parts[1].body.subject[0], email.parts[0].body]);
+            });
+            return emails;
         });
     });
 })
 
 cardData.then((result) => {
-    ankiConnect.addNote(result);
+        ankiConnect.addNotes(result);
 });
