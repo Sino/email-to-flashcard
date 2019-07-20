@@ -1,35 +1,35 @@
-require('dotenv').config();
-const request = require('request');
+const imap_simple = require('imap-simple');
+const ankiConnect = require('./ankiConnect');
 
-// AnkiConnect server
-const url = 'http://localhost:8765';
-
-const config = {
-    deckName: 'test_deck1',
-    front: 'front_data',
-    back: 'back_data',
+const imapConfig = {
+    imap: {
+        user: process.env.EMAIL_ACCOUNT_NAME,
+        password: process.env.EMAIL_ACCOUNT_PASS,
+        host: process.env.EMAIL_ACCOUNT_HOST,
+        port: parseInt(process.env.EMAIL_ACCOUNT_PORT),
+        tls: true,
+        authTimeout: 3000,
+    }
 };
 
-const body = {
-    action: 'addNote',
-    version: 6,
-    params: {
-        note: {
-            deckName: config.deckName,
-            modelName: 'Basic',
-            fields: {
-                Front: config.front,
-                Back: config.back
-            },
-            tags: []
-      }
-    }
-  };
+const cardData = imap_simple.connect(imapConfig).then( (connection) => {
+    return connection.openBox('INBOX').then( () => {
 
-request.post( { url, json: true, body }, (error, response) => {
-    if (error) {
-        console.error(error);
-    }
-    console.log(`note with id ${response.body.result} created`);
+        const searchCriteria = [
+            'UNSEEN'
+        ];
+
+        const fetchOpts = {
+            bodies: ['HEADER', 'TEXT'],
+            markSeen: false,
+        }
+
+        return connection.search(searchCriteria, fetchOpts).then( (results) => {
+            return [results[0].parts[1].body.subject[0], results[0].parts[0].body];
+        });
+    });
+})
+
+cardData.then((result) => {
+    ankiConnect.addNote(result);
 });
-
