@@ -1,0 +1,24 @@
+{
+  "name": "email-to-flashcard",
+  "version": "1.0.0",
+  "description": "parses emails sent to an address and converts them to flash cards for anki or others.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sino/email-to-flashcard.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sino/email-to-flashcard/issues"
+  },
+  "homepage": "https://github.com/Sino/email-to-flashcard#readme",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "imap-simple": "^4.3.0",
+    "request": "^2.88.0"
+  }
+}
