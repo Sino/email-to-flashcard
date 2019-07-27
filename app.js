@@ -1,5 +1,6 @@
 const imap_simple = require('imap-simple');
-const ankiConnect = require('./ankiConnect');
+const readFiles = require('./readFiles');
+const FILETYPE = RegExp('.txt$');
 
 const imapConfig = {
     imap: {
@@ -11,29 +12,46 @@ const imapConfig = {
         authTimeout: 3000,
     }
 };
-
-const cardData = imap_simple.connect(imapConfig).then( (connection) => {
-    return connection.openBox('INBOX').then( () => {
-
-        const searchCriteria = [
-            'UNSEEN'
-        ];
-
+ 
+imap_simple.connect(imapConfig).then(function (connection) {
+ 
+    connection.openBox('INBOX').then(function () {
+ 
+        const searchCriteria = ['UNSEEN'];
         const fetchOpts = {
             bodies: ['HEADER', 'TEXT'],
-            markSeen: true,
+            markSeen: false,
+            struct: true
         }
+        
+        // retrieve only the headers of the messages
+        return connection.search(searchCriteria, fetchOpts);
+    }).then(function (messages) {
+ 
+        var attachments = [];
+ 
+        messages.forEach(function (message) {
+            var parts = imap_simple.getParts(message.attributes.struct);
+            attachments = attachments.concat(parts.filter(function (part) {
+                return part.disposition && part.disposition.type.toUpperCase() === 'ATTACHMENT';
+            }).map(function (part) {
+                // retrieve the attachments only of the messages with attachments
+                return connection.getPartData(message, part)
+                    .then(function (partData) {
+                        return {
+                            filename: part.disposition.params.filename,
+                            data: partData,
+                        };
+                    });
+            }));
+        });
 
-        return connection.search(searchCriteria, fetchOpts).then( (results) => {
-            const emails = [];
-            results.forEach( (email) => {
-                emails.push([email.parts[1].body.subject[0], email.parts[0].body]);
-            });
-            return emails;
+        return Promise.all(attachments);
+    }).then(function (attachments) {
+        attachments.forEach( (attachment) => {
+            if (FILETYPE.test(attachment.filename)) {
+                readFiles.stringToCards(attachment.data.toString());
+            }
         });
     });
-})
-
-cardData.then((result) => {
-        ankiConnect.addNotes(result);
 });
