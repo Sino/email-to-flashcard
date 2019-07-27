@@ -30,14 +30,16 @@ function addNote(front, back) {
         if (error) {
             console.error(error);
         }
-        console.log(`note with id ${response.body.result} created`);
+        if (response.body.result) {
+            console.log(`note with id ${response.body.result} created`);
+        }
     });
 
 }
 
-function addNotes(emails) {
-    emails.forEach( (email) => {
-        addNote(email[0], email[1]);        
+function addNotes(cardData) {
+    cardData.forEach( (card) => {
+        addNote(card[0], card[1]);
     });
 }
 
